@@ -51,22 +51,23 @@ CALL insertUser(1000)$$
 
 
 DROP FUNCTION IF EXISTS `generateMoney` $$
-CREATE FUNCTION generateMoney() RETURNS VARCHAR(31)
+CREATE FUNCTION generateMoney() RETURNS DOUBLE(12,2)
 BEGIN
     DECLARE money TEXT DEFAULT '-1';
     DECLARE length INT DEFAULT 5 + FLOOR(RAND()*5) ; #RAND() 返回值包含0不包含1
     
-    RETURN CONCAT('', FLOOR(RAND() * POW(10, length))); #RAND() 可能小于 0.01
+    RETURN RAND() * POW(10, length); #RAND() 可能小于 0.01
 END $$
 
 DROP PROCEDURE IF EXISTS insertProfiles $$
 CREATE PROCEDURE insertProfiles(counts INT)
 BEGIN
     DECLARE i INT DEFAULT 0;
-    
+    DECLARE tmp INT;
     WHILE i<counts DO
-       INSERT INTO profiles VALUES(null, Now(3), '1', '收支描述...', generateMoney(), 
-       generateMoney(), generateMoney(), '无');
+        set tmp = CEIL(RAND() *3);
+        INSERT INTO profiles VALUES(null, Now(3), tmp, '收支描述...', generateMoney(), 
+        generateMoney(), generateMoney(), '无');
         set i = i+1;
     END WHILE;
 END $$

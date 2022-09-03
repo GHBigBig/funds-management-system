@@ -48,7 +48,6 @@ passport.use(new JwtStrategy(opts, function(jwt_payload, done) {
                 
                 return done(null, user);
             }else {
-                
                 return done(null, false, {msg: 'Incorr'});
                 
             }

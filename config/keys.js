@@ -6,7 +6,7 @@ let dbConnect = {
     password: 'Qwertyuiop0.',
     database: 'funds'
 };
-let avatarPath = 'img/';
+let avatarPath = 'static/img/';
 let jwtSecretOrPrivateKey = 'funds-jwt';
 
 

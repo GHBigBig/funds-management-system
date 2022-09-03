@@ -34,11 +34,10 @@ const upload = multer({ storage: storage });
 
 let avatarFileName = '';
 
-// $route GET api/users/user restful api
+// $route GET api/users/user 
 // @desc 检查邮箱是否已经被注册
 // @access public
-router.get('/user', (req, res) => {
-    
+router.get('/userIsExist', (req, res) => {
     getUserByEmail(req.query.email)
         .then(user => {
             if (!user) {
@@ -50,7 +49,6 @@ router.get('/user', (req, res) => {
         .catch(err => {
             throw err;
         });
-
 });
 
 function getUserByEmail(email = '') {
@@ -93,7 +91,7 @@ router.post('/user', upload.fields([{ name: 'avatar', maxCount: 1 }]), (req, res
     user.name = req.body.name;
     user.password = getCryptoStr(req.body.password);
     user.email = req.body.email;
-    user.avatar = avatarPath + avatarFileName;
+    user.avatar = '/' + (avatarPath + (avatarFileName==='' ? 'avatar-default.png' : avatarFileName)).slice(7);
     user.rid = req.body.rid;
 
     let date = new Date();
@@ -124,7 +122,7 @@ router.post('/user', upload.fields([{ name: 'avatar', maxCount: 1 }]), (req, res
                     user.uid = result.insertId;
                     console.debug(`register user: ${user}`);
 
-                    res.json(new SysStatus(1, user));
+                    res.json(new SysStatus(1, '用户注册成功',    user));
                 });
             }
         });
@@ -136,27 +134,35 @@ router.post('/user', upload.fields([{ name: 'avatar', maxCount: 1 }]), (req, res
 // @desc 用户登录，返回 token jwt passport
 // @access public
 router.post('/login', (req, res) => {
-    // console.log(req);
-    // pool.getConnection((err, conn) => {
-    //     if (err) {
-    //         throw err;
-    //     }
-    //     let cryptoStr = getCryptoStr(req.body.password);
-    //     let sqlStr = 'SELECT uid,rid FROM users WHERE email=? and password=?';
-    //     conn.query(sqlStr, [req.body.email, cryptoStr], (err, result) => {
-    //         if (err) {
-    //             throw err;
-    //         }
-    //         if (result.length == 0) {
-    //             res.send(JSON.stringify(new SysStatus(-1, '用户名不存在或者用户名和密码不匹配')));
-    //         } else {
-    //             let payload = { sub: result[0].uid, email: req.body.email, rid: result[0].rid };
-    //             const token = 'Bearer ' + jwt.sign(payload, jwtSecretOrPrivateKey, { expiresIn: 3600 });
-    //             res.json(new SysStatus(1, '登陆成功', { token }));
-    //         }
-    //         conn.release();
-    //     });
-    // });
+    pool.getConnection((err, conn) => {
+        if (err) {
+            throw err;
+        }
+        let cryptoStr = getCryptoStr(req.body.password);
+        let sqlStr = 'SELECT * FROM users WHERE email=? and password=?';
+        conn.query(sqlStr, [req.body.email, cryptoStr], (err, result) => {
+            if (err) {
+                throw err;
+            }
+            if (result.length == 0) {
+                res.send(JSON.stringify(new SysStatus(-1, '用户名不存在或者用户名和密码不匹配')));
+            } else {
+                let user = new User;
+                user.uid = result[0].uid;
+                user.name = result[0].name;
+                user.password = '';
+                user.email = result[0].email;
+                user.avatar = result[0].avatar;
+                user.rid = result[0].rid;
+
+                let payload = { sub: user.uid, email: user.email, rid: user.rid };
+                const token = 'Bearer ' + jwt.sign(payload, jwtSecretOrPrivateKey, { expiresIn: 3600 });
+                
+                res.json(new SysStatus(1, '登陆成功', { token, user}));
+            }
+            conn.release();
+        });
+    });
 });
 
 // $route POST api/users/current
